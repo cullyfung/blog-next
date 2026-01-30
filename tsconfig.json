@@ -3,19 +3,13 @@
     "incremental": true,
     "target": "esnext",
     "jsx": "react-jsx",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "baseUrl": "./",
     "module": "esnext",
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@pkg": ["./package.json"],
+      "@/*": ["./src/*"],
+      "@pkg": ["./package.json"]
     },
     "resolveJsonModule": true,
     "allowJs": true,
@@ -40,7 +34,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

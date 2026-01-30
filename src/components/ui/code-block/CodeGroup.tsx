@@ -1,16 +1,14 @@
 'use client';
 
-import type { CodeTheme } from '@/lib/shiki/types';
 import React from 'react';
-import { CodeBlock } from './CodeBlock';
+import { CodeBlockClient } from './CodeBlockClient';
 import { extractCodeBlocksFromChildren } from './utils';
 
 interface CodeGroupProps {
-  'children'?: React.ReactNode;
-  'codeTheme'?: CodeTheme;
+  children?: React.ReactNode;
   'data-code-blocks'?: string;
-  'dataCodeBlocks'?: string;
-  [key: string]: any;
+  dataCodeBlocks?: string;
+  [key: string]: unknown;
 }
 
 interface CodeBlockData {
@@ -29,30 +27,30 @@ interface CodeBlockData {
  */
 export function CodeGroup({
   children,
-  codeTheme,
+  codeTheme: _codeTheme,
   'data-code-blocks': dataCodeBlocksKebab,
   dataCodeBlocks: dataCodeBlocksCamel,
   ...props
 }: CodeGroupProps) {
   // Try to get data from attributes (directive syntax with data-code-blocks)
-  const dataCodeBlocks
-    = dataCodeBlocksKebab
-      || dataCodeBlocksCamel
-      || props.dataCodeBlocks
-      || props['data-code-blocks'];
+  const dataCodeBlocks = [
+    dataCodeBlocksKebab,
+    dataCodeBlocksCamel,
+    props.dataCodeBlocks,
+    props['data-code-blocks'],
+  ].find((value): value is string => typeof value === 'string');
 
   const tabs = React.useMemo(() => {
     // Priority 1: Parse from data-code-blocks attribute (directive syntax)
     if (dataCodeBlocks) {
       try {
         const blocks: CodeBlockData[] = JSON.parse(dataCodeBlocks);
-        return blocks.map(block => ({
+        return blocks.map((block) => ({
           label: block.label,
           code: block.code,
           language: block.language,
         }));
-      }
-      catch (error) {
+      } catch (error) {
         console.error('Failed to parse data-code-blocks:', error);
       }
     }
@@ -65,5 +63,5 @@ export function CodeGroup({
     return null;
   }
 
-  return <CodeBlock tabs={tabs} codeTheme={codeTheme} />;
+  return <CodeBlockClient tabs={tabs} />;
 }

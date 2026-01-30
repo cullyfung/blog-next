@@ -1,8 +1,10 @@
 import type { Result as TocResult } from 'mdast-util-toc';
-import type { CodeTheme } from '@/lib/shiki/types';
+import type React from 'react';
 import PostToc from '@/components/site/PostToc';
+import type { CodeTheme } from '@/lib/shiki/types';
 import { cn } from '@/lib/utils';
 import { renderMarkdown } from '@/markdown';
+import { createMdxComponentsServer } from '@/markdown/components.server';
 import { MarkdownContentContainer } from './MarkdownContentContainer';
 
 interface MarkdownContentServerProps {
@@ -36,6 +38,7 @@ export function MarkdownContentServer({
     content,
     strictMode,
     codeTheme,
+    components: createMdxComponentsServer({ codeTheme }),
   });
 
   let toc: TocResult | undefined;
@@ -45,12 +48,10 @@ export function MarkdownContentServer({
 
   return (
     <MarkdownContentContainer className={cn('relative', className)}>
-      <>
-        <div className="post-content prose dark:prose-invert">
-          {parsedContent?.toElement()}
-        </div>
-        {toc && <PostToc data={toc} />}
-      </>
+      <div className="post-content prose dark:prose-invert ">
+        {parsedContent?.toElement()}
+      </div>
+      {toc && <PostToc data={toc} />}
     </MarkdownContentContainer>
   );
 }

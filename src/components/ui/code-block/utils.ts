@@ -16,15 +16,15 @@ export function extractCodeBlocksFromChildren(
   const extracted: ExtractedCodeBlock[] = [];
 
   React.Children.forEach(children, (child) => {
-    if (!React.isValidElement(child))
-      return;
+    if (!React.isValidElement(child)) return;
 
     // If it's a <pre> element
     if (child.type === 'pre') {
       const codeChild = React.Children.toArray(child.props.children).find(
         (c): c is React.ReactElement =>
-          React.isValidElement(c)
-          && (c.type === 'code' || (typeof c.type === 'string' && c.type === 'code')),
+          React.isValidElement(c) &&
+          (c.type === 'code' ||
+            (typeof c.type === 'string' && c.type === 'code')),
       );
 
       if (codeChild) {

@@ -1,15 +1,12 @@
-import type { TImageProps } from '@/components/ui/image';
-
 import { memo } from 'react';
 import { FadeIn } from '@/components/common/FadeIn';
+import type { TImageProps } from '@/components/ui/image';
 import { Image } from '@/components/ui/image';
 import { isServer } from '@/lib/is';
 import { SITE_URL } from '@/lib/site';
 import { cn } from '@/lib/utils';
 
-const AdvancedImagePrimitive = memo(async (
-  props: TImageProps,
-) => {
+const AdvancedImagePrimitive = memo(async (props: TImageProps) => {
   let info: {
     size: {
       width: number;
@@ -23,8 +20,7 @@ const AdvancedImagePrimitive = memo(async (
       info = await (
         await fetch(`${SITE_URL}/api/image?url=${props.src}`)
       ).json();
-    }
-    catch (error) {}
+    } catch (error) {}
   }
 
   const autoProps = info?.base64

@@ -130,36 +130,6 @@
       }
     } */
 
-    /* Tables */
-    .table-wrapper {
-      @apply min-w-full rounded-xl text-sm my-7 whitespace-nowrap overflow-auto;
-      border: 1px solid var(--prose-td-borders);
-    }
-
-    table {
-      @apply min-w-full;
-    }
-
-    table thead {
-      @apply text-left;
-      color: var(--prose-headings);
-    }
-
-    table th {
-      @apply px-3 py-4;
-      border-bottom: 1px solid var(--prose-th-borders);
-      font-weight: var(--prose-heading-weight);
-    }
-
-    table td {
-      @apply px-3 py-4;
-      border-bottom: 1px solid var(--prose-td-borders);
-    }
-
-    table tbody tr:nth-child(2n-1) {
-      background-color: color-mix(in srgb, var(--prose-td-borders) 30%, transparent);
-    }
-
     /* Inline Code */
     /* code:not(pre code) {
       color: var(--prose-code);
@@ -209,7 +179,7 @@
     }
 
     .block-tag {
-      @apply block my-6;
+      @apply block mb-5;
     }
 
     .post-toc .katex {
@@ -219,9 +189,7 @@
 
   /* Shiki Dark Mode */
   [data-theme="dark"] .shiki,
-  [data-theme="dark"] .shiki span,
-  [data-theme="dark"] .shiki-content,
-  [data-theme="dark"] .shiki-content span {
+  [data-theme="dark"] .shiki span{
     color: var(--shiki-dark) !important;
     background-color: var(--shiki-dark-bg) !important;
     font-style: var(--shiki-dark-font-style) !important;
@@ -229,9 +197,4 @@
     text-decoration: var(--shiki-dark-text-decoration) !important;
   }
 
-  /* Shiki content styling */
-  .shiki-content {
-    display: block;
-    white-space: pre;
-  }
 }

@@ -33,15 +33,9 @@ export default async function RootLayout({
   modal?: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <body className={cn(snProFont.variable)}>
-        <NextTopLoader
-          color="var(--color-primary)"
-          showSpinner={false}
-        />
+        <NextTopLoader color="var(--color-primary)" showSpinner={false} />
         <AppProviders>
           <Main>
             {children}

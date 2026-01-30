@@ -21,26 +21,38 @@ export default function NotFound() {
 
             <div className="relative p-10 sm:p-12">
               <div>
-                <p className="text-text-tertiary mb-3 text-xs font-semibold tracking-[0.55em] uppercase">404</p>
-                <h1 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">Page Not Found</h1>
+                <p className="text-text-tertiary mb-3 text-xs font-semibold tracking-[0.55em] uppercase">
+                  404
+                </p>
+                <h1 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                  Page Not Found
+                </h1>
                 <p className="text-text-secondary mb-6 text-base leading-relaxed">
-                  The page you're looking for doesn't exist. It may have been moved or deleted. Please check the URL or
-                  return to the home page to continue exploring.
+                  The page you're looking for doesn't exist. It may have been
+                  moved or deleted. Please check the URL or return to the home
+                  page to continue exploring.
                 </p>
 
                 <div className="bg-material-medium/40 border-fill-tertiary mb-6 rounded-2xl border px-5 py-4 text-sm">
                   <p className="text-text-secondary">
-                    Current path:
-                    {' '}
+                    Current path:{' '}
                     <span className="text-text font-medium">{pathname}</span>
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <Button variant="primary" className="glassmorphic-btn flex-1" onClick={() => router.push('/')}>
+                  <Button
+                    variant="primary"
+                    className="glassmorphic-btn flex-1"
+                    onClick={() => router.push('/')}
+                  >
                     Back to Home
                   </Button>
-                  <Button variant="ghost" className="flex-1" onClick={() => router.back()}>
+                  <Button
+                    variant="ghost"
+                    className="flex-1"
+                    onClick={() => router.back()}
+                  >
                     Go Back
                   </Button>
                 </div>

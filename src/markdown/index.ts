@@ -1,13 +1,9 @@
 import type { Root as HashRoot } from 'hast';
-import type { ExtraProps } from 'hast-util-to-jsx-runtime';
-import type { Root as MdashRoot } from 'mdast';
-import type { Processor } from 'unified';
-import type { CodeTheme } from '@/lib/shiki/types';
 import { toHtml } from 'hast-util-to-html';
 import { toJsxRuntime } from 'hast-util-to-jsx-runtime';
 import jsYaml from 'js-yaml';
+import type { Root as MdashRoot } from 'mdast';
 import { toc } from 'mdast-util-toc';
-import { createElement } from 'react';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import readingTime from 'reading-time';
 import rehypeInferDescriptionMeta from 'rehype-infer-description-meta';
@@ -15,13 +11,15 @@ import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeSlug from 'rehype-slug';
+import rehypeStringify from 'rehype-stringify';
 import remarkBreaks from 'remark-breaks';
 import remarkDirective from 'remark-directive';
 import remarkDirectiveRehype from 'remark-directive-rehype';
+import remarkEmoji from 'remark-emoji';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
-import remarkGithubAlerts from 'remark-gh-alerts';
 
+import remarkGithubAlerts from 'remark-gh-alerts';
 import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
@@ -31,59 +29,63 @@ import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
 import { consoleLog } from '@/lib/console';
 import { isServer } from '@/lib/is';
-import { createMdxComponents, mdxComponents } from './components';
-import { rehypeCodeBlock } from './rehype-code-block';
+import type { CodeTheme } from '@/lib/shiki/types';
+import { createMdxComponents } from './components';
 import { rehypeCodeGroup } from './rehype-code-group';
 import { rehypeFixBlock } from './rehype-fix-block';
 import { rehypeMermaid } from './rehype-mermaid';
 import { rehypePeekabooLink } from './rehype-peekaboo-link';
-import { rehypeTable } from './rehype-table';
 import { remarkCodeGroup } from './remark-code-group';
 import { remarkPangu } from './remark-pangu';
 import sanitizeScheme from './sanitize-schema';
 
-const processorCache = new Map<boolean, Processor<any, any, any, any, any>>();
+const processorCache = new Map<string, ReturnType<typeof unified>>();
 
-function getMarkdownProcessor(strictMode?: boolean) {
-  const cacheKey = Boolean(strictMode);
-  const cached = processorCache.get(cacheKey);
+function createProcessor(strictMode?: boolean) {
+  return (
+    unified()
+      .use(remarkParse)
+      .use(remarkGithubAlerts) // make sure this is before remarkBreaks
+      .use(remarkBreaks)
+      .use(remarkFrontmatter, ['yaml'])
+      .use(remarkGfm, {
+        singleTilde: false,
+      })
+      .use(remarkDirective)
+      .use(remarkCodeGroup) // Process code-group directive before converting to rehype
+      .use(remarkDirectiveRehype)
+      .use(remarkMath, {
+        singleDollarTextMath: false,
+      })
+      .use(remarkPangu)
+      .use(remarkEmoji)
+      .use(remarkRehype, {
+        allowDangerousHtml: true,
+      })
+      .use(rehypeRaw)
+      .use(rehypeCodeGroup) // Must be right after rehypeRaw to process wrapper elements
+      .use(rehypeSlug)
+      .use(rehypeSanitize, strictMode ? undefined : sanitizeScheme)
+      .use(rehypeMermaid)
+      .use(rehypePeekabooLink)
+      // .use(rehypeTaskList) // 处理任务列表的 checkbox
+      .use(rehypeFixBlock) // 必须放在其他 rehype 插件之后
+      .use(rehypeInferDescriptionMeta)
+      .use(rehypeKatex, {
+        strict: false,
+      })
+      .use(rehypeStringify, { allowDangerousHtml: true })
+  );
+}
+
+function getProcessor(strictMode?: boolean) {
+  const key = strictMode ? 'strict' : 'default';
+  const cached = processorCache.get(key);
   if (cached) {
     return cached;
   }
-
-  const processor: Processor<any, any, any, any, any> = unified()
-    .use(remarkParse)
-    .use(remarkGithubAlerts)
-    .use(remarkBreaks)
-    .use(remarkFrontmatter, ['yaml'])
-    .use(remarkGfm, {
-      singleTilde: false,
-    })
-    .use(remarkDirective)
-    .use(remarkCodeGroup)
-    .use(remarkDirectiveRehype)
-    .use(remarkMath, {
-      singleDollarTextMath: false,
-    })
-    .use(remarkPangu)
-    .use(remarkRehype, {
-      allowDangerousHtml: true,
-    })
-    .use(rehypeCodeBlock)
-    .use(rehypeRaw)
-    .use(rehypeCodeGroup)
-    .use(rehypeSlug)
-    .use(rehypeSanitize, strictMode ? undefined : sanitizeScheme)
-    .use(rehypeTable)
-    .use(rehypeMermaid)
-    .use(rehypePeekabooLink)
-    .use(rehypeFixBlock)
-    .use(rehypeInferDescriptionMeta)
-    .use(rehypeKatex, {
-      strict: false,
-    });
-
-  processorCache.set(cacheKey, processor);
+  const processor = createProcessor(strictMode);
+  processorCache.set(key, processor);
   return processor;
 }
 
@@ -91,10 +93,12 @@ export function renderMarkdown({
   content,
   strictMode,
   codeTheme,
+  components,
 }: {
   content: string;
   strictMode?: boolean;
   codeTheme?: CodeTheme;
+  components?: Record<string, unknown>;
 }) {
   let hastTree: HashRoot | undefined;
   let mdastTree: MdashRoot | undefined;
@@ -102,42 +106,37 @@ export function renderMarkdown({
   const file = new VFile(content);
 
   try {
-    const processor = getMarkdownProcessor(strictMode);
+    const processor = getProcessor(strictMode);
 
     // markdown abstract syntax tree
-    mdastTree = processor.parse(file) as MdashRoot;
+    mdastTree = processor.parse(file);
     // hypertext abstract syntax tree
-    hastTree = processor.runSync(mdastTree, file) as HashRoot;
-  }
-  catch (error) {
+    hastTree = processor.runSync(mdastTree, file);
+  } catch (error) {
     consoleLog('ERROR', 'renderMarkdown:', error);
     if (!isServer()) {
       toast.error((error as Error).message);
     }
   }
-
   return {
     tree: hastTree,
     toToc: () =>
-      mdastTree
-      && toc(mdastTree, {
+      mdastTree &&
+      toc(mdastTree, {
         tight: true,
         ordered: true,
       }),
     toHtml: () => hastTree && toHtml(hastTree),
     toElement: () =>
-      hastTree
-      && toJsxRuntime(hastTree, {
+      hastTree &&
+      toJsxRuntime(hastTree, {
         Fragment,
-        components: {
-          ...mdxComponents,
-          ...createMdxComponents(codeTheme),
-        },
+        components: components ?? createMdxComponents({ codeTheme }),
         ignoreInvalidStyle: true,
         jsx,
         jsxs,
         passNode: true,
-      } as any),
+      }),
     toMetadata: () => {
       const metadata = {
         frontMatter: undefined,
@@ -145,7 +144,7 @@ export function renderMarkdown({
         audio: undefined,
         excerpt: undefined,
       } as {
-        frontMatter?: Record<string, any>;
+        frontMatter?: Record<string, unknown>;
         images: string[];
         audio?: string;
         excerpt?: string;
@@ -158,7 +157,7 @@ export function renderMarkdown({
           if (node.type === 'yaml') {
             metadata.frontMatter = jsYaml.load(node.value) as Record<
               string,
-              any
+              unknown
             >;
             metadata.frontMatter.readingTime = readingTime(node.value).text;
           }
@@ -169,8 +168,8 @@ export function renderMarkdown({
         visit(hastTree, (node) => {
           if (node.type === 'element') {
             if (
-              node.tagName === 'img'
-              && typeof node.properties.src === 'string'
+              node.tagName === 'img' &&
+              typeof node.properties.src === 'string'
             ) {
               metadata.images.push(node.properties.src);
             }

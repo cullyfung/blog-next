@@ -4,16 +4,13 @@ import { visit } from 'unist-util-visit';
 
 // 判断是否为外链
 function isExternalLink(href: string): boolean {
-  if (!href)
-    return false;
+  if (!href) return false;
 
   // 排除内部链接
-  if (href.startsWith('/') || href.startsWith('#'))
-    return false;
+  if (href.startsWith('/') || href.startsWith('#')) return false;
 
   // 排除相对路径
-  if (!href.startsWith('http://') && !href.startsWith('https://'))
-    return false;
+  if (!href.startsWith('http://') && !href.startsWith('https://')) return false;
 
   return true;
 }
@@ -22,9 +19,9 @@ export const rehypePeekabooLink: Plugin<Array<void>, Root> = () => {
   return (tree: Root) => {
     visit(tree, { type: 'element', tagName: 'a' }, (node, i, parent) => {
       if (
-        node.properties?.href
-        && isExternalLink(node.properties.href as string)
-        && typeof i === 'number'
+        node.properties?.href &&
+        isExternalLink(node.properties.href as string) &&
+        typeof i === 'number'
       ) {
         const href = node.properties.href as string;
 
@@ -39,7 +36,7 @@ export const rehypePeekabooLink: Plugin<Array<void>, Root> = () => {
         };
 
         // 替换原始链接节点
-        if (parent && parent.children) {
+        if (parent?.children) {
           parent.children[i] = peekabooLinkNode;
         }
       }

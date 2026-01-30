@@ -26,7 +26,7 @@ export function MarkdownContentContainer({
     <div
       className={cn('relative', className)}
       onMouseEnter={onMouseEnter}
-      onScroll={e => onScroll?.((e.target as any)?.scrollTop)}
+      onScroll={(e) => onScroll?.((e.target as any)?.scrollTop)}
     >
       {children}
     </div>

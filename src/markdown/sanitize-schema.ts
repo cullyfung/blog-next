@@ -31,8 +31,8 @@ const scheme = deepmerge(defaultSchema, {
   // },
   attributes: {
     '*': ['className', 'style'],
-    'video': ['src', 'controls', 'loop', 'muted', 'autoPlay', 'playsInline'],
-    'audio': [
+    video: ['src', 'controls', 'loop', 'muted', 'autoPlay', 'playsInline'],
+    audio: [
       'src',
       'controls',
       'loop',
@@ -43,9 +43,9 @@ const scheme = deepmerge(defaultSchema, {
       'cover',
       'lrc',
     ],
-    'source': ['src', 'type'],
-    'iframe': ['src', 'allowFullScreen', 'frameborder', 'allow'],
-    'svg': [
+    source: ['src', 'type'],
+    iframe: ['src', 'allowFullScreen', 'frameborder', 'allow'],
+    svg: [
       'xmlns',
       'width',
       'height',
@@ -56,15 +56,15 @@ const scheme = deepmerge(defaultSchema, {
       'strokeLineJoin',
       'strokeWidth',
     ],
-    'path': ['d', 'fill'],
-    'circle': ['cx', 'cy', 'r', 'fill'],
-    'rss': ['src', 'limit'],
-    'linkcard': ['title', 'href', 'image', 'description'],
-    'darktoggle': [],
-    'linkpreview': ['url'],
-    'peekaboolink': ['href'],
-    'mermaid': ['className', 'style'],
-    'div': [
+    path: ['d', 'fill'],
+    circle: ['cx', 'cy', 'r', 'fill'],
+    rss: ['src', 'limit'],
+    linkcard: ['title', 'href', 'image', 'description'],
+    darktoggle: [],
+    linkpreview: ['url'],
+    peekaboolink: ['href'],
+    mermaid: ['className', 'style'],
+    div: [
       'className',
       'data-labels',
       'data-code',
@@ -75,13 +75,13 @@ const scheme = deepmerge(defaultSchema, {
       'dataLanguage',
       'dataLabel',
     ],
-    'codeblock': [
-      'code',              // Code content
-      'language',          // Language
+    codeblock: [
+      'code', // Code content
+      'language', // Language
     ],
-    'codegroup': [
-      'data-code-blocks',  // For :::code-group directive
-      'dataCodeBlocks',    // camelCase version
+    codegroup: [
+      'data-code-blocks', // For :::code-group directive
+      'dataCodeBlocks', // camelCase version
     ],
   },
   protocols: {

@@ -26,13 +26,8 @@ async function PostPage({ params }: PostPageParams) {
       <MarkdownContentServer
         className="mt-10"
         content={post?.code}
-        codeTheme={{
-          light: 'vitesse-light',
-          dark: 'vitesse-black',
-        }}
         withToc
-      >
-      </MarkdownContentServer>
+      ></MarkdownContentServer>
     </div>
   );
 }
@@ -40,7 +35,7 @@ async function PostPage({ params }: PostPageParams) {
 export async function generateStaticParams() {
   const posts = await getAllPosts();
 
-  return posts.map(post => ({
+  return posts.map((post) => ({
     slug: post.slug,
   }));
 }

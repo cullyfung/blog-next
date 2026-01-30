@@ -14,7 +14,9 @@ async function main() {
     });
 
     logger.main.info('📸 开始构建照片库...');
-    logger.main.info(`   存储提供商: ${config.user?.storage?.provider || 'local'}`);
+    logger.main.info(
+      `   存储提供商: ${config.user?.storage?.provider || 'local'}`,
+    );
 
     // 创建 builder 实例
     const builder = new AfilmoryBuilder(config);
@@ -58,8 +60,7 @@ async function main() {
     if (!result.hasUpdates) {
       logger.main.info('\n📋 没有需要更新的照片');
     }
-  }
-  catch (error) {
+  } catch (error) {
     logger.main.error('❌ 构建失败:', error);
     process.exit(1);
   }

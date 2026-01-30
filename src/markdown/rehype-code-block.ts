@@ -9,8 +9,7 @@ import { visit } from 'unist-util-visit';
 export const rehypeCodeBlock: Plugin<[], Root> = () => {
   return (tree: Root) => {
     visit(tree, 'element', (node: Element, index, parent) => {
-      if (!parent || index === undefined)
-        return;
+      if (!parent || index === undefined) return;
 
       // 只处理 pre 标签（单个代码块）
       if (node.tagName === 'pre') {
@@ -20,12 +19,14 @@ export const rehypeCodeBlock: Plugin<[], Root> = () => {
         if (!isInGroup) {
           // 独立的 code block：提取数据并转换
           const codeChild = node.children.find(
-            (child: any) => child.type === 'element' && child.tagName === 'code',
+            (child: any) =>
+              child.type === 'element' && child.tagName === 'code',
           ) as Element | undefined;
 
           if (codeChild) {
             // 提取 language
-            const className = (codeChild.properties?.className as string[]) || [];
+            const className =
+              (codeChild.properties?.className as string[]) || [];
             const languageClass = className.find((c: string) =>
               c.startsWith('language-'),
             );
@@ -62,8 +63,7 @@ export const rehypeCodeBlock: Plugin<[], Root> = () => {
  * 检查节点是否在 code-group 内部
  */
 function isInsideCodeGroup(node: any): boolean {
-  if (!node)
-    return false;
+  if (!node) return false;
 
   // 检查是否是 codegroup 标签（由 remark-code-group 生成）
   if (node.type === 'element' && node.tagName === 'codegroup') {
@@ -87,8 +87,7 @@ function extractText(node: Element): string {
   function traverse(n: any) {
     if (n.type === 'text') {
       text += (n as Text).value;
-    }
-    else if (n.children) {
+    } else if (n.children) {
       n.children.forEach(traverse);
     }
   }

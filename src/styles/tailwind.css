@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-/* @plugin '@tailwindcss/typography'; */
 @plugin '@egoist/tailwindcss-icons';
 @plugin 'daisyui';
 @plugin 'tailwindcss-animate';

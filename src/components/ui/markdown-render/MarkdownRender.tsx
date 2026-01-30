@@ -2,17 +2,14 @@ import type { ExtraProps } from 'hast-util-to-jsx-runtime';
 
 export function createMarkdownHeaderComponent(tag: string) {
   const MarkdownHeader: React.FC<
-    React.ClassAttributes<HTMLHeadingElement>
-    & React.HTMLAttributes<HTMLHeadingElement>
-    & ExtraProps
+    React.ClassAttributes<HTMLHeadingElement> &
+      React.HTMLAttributes<HTMLHeadingElement> &
+      ExtraProps
   > = ({ children, ...rest }) => {
     const Tag = tag as any;
 
     return (
-      <Tag
-        {...rest}
-        className="flex items-center"
-      >
+      <Tag {...rest} className="flex items-center">
         {children}
         <a
           className="anchor flex items-center"

@@ -16,7 +16,7 @@ interface CodeBlockData {
 
 export const rehypeCodeGroup: Plugin<[], Root> = () => {
   return (tree: Root) => {
-    visit(tree, 'element', (node: Element, index, parent) => {
+    visit(tree, 'element', (node: Element, _index, _parent) => {
       // Only handle CodeGroup HTML tag syntax (PascalCase)
       // Directive syntax (:::code-group) is handled by remarkCodeGroup → <codegroup> tag
       if (node.tagName === 'CodeGroup') {
@@ -34,15 +34,24 @@ export const rehypeCodeGroup: Plugin<[], Root> = () => {
               // Extract language from className
               const className = codeElement.properties?.className;
               const languageMatch = Array.isArray(className)
-                ? className.find((c: any) => typeof c === 'string' && c.startsWith('language-'))
-                : typeof className === 'string' && className.startsWith('language-') ? className : null;
+                ? className.find(
+                    (c: any) =>
+                      typeof c === 'string' && c.startsWith('language-'),
+                  )
+                : typeof className === 'string' &&
+                    className.startsWith('language-')
+                  ? className
+                  : null;
 
-              const language = typeof languageMatch === 'string'
-                ? languageMatch.replace('language-', '')
-                : 'text';
+              const language =
+                typeof languageMatch === 'string'
+                  ? languageMatch.replace('language-', '')
+                  : 'text';
 
               // Extract code text
-              const textNode = codeElement.children.find((c): c is Text => c.type === 'text');
+              const textNode = codeElement.children.find(
+                (c): c is Text => c.type === 'text',
+              );
               const code = textNode?.value || '';
 
               // Extract label from data-meta or first line comment
@@ -62,7 +71,9 @@ export const rehypeCodeGroup: Plugin<[], Root> = () => {
                 const lines = code.split('\n');
                 const firstLine = lines[0]?.trim();
                 if (firstLine) {
-                  const commentMatch = firstLine.match(/^(?:#|\/\/|<!--|\/\*)\s*(.+?)(?:-->|\*\/)?$/);
+                  const commentMatch = firstLine.match(
+                    /^(?:#|\/\/|<!--|\/\*)\s*(.+?)(?:-->|\*\/)?$/,
+                  );
                   if (commentMatch) {
                     label = commentMatch[1].trim();
                   }

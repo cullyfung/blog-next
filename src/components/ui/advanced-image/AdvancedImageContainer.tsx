@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 
 const AdvancedImage = dynamic(
-  async () => import('./AdvancedImage').then(mod => mod.AdvancedImage),
+  () => import('./AdvancedImage').then((mod) => mod.AdvancedImage),
   {
     ssr: false,
   },

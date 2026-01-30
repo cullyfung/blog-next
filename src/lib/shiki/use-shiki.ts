@@ -1,41 +1,65 @@
 'use client';
 
-import type { BundledLanguage, BundledTheme, DynamicImportLanguageRegistration, DynamicImportThemeRegistration, HighlighterCore } from 'shiki';
-import type { CodeTheme, ShikiCodeProps } from './types';
-
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { defaultCodeTheme, extractShikiHtml, shikiTransformers } from './shared';
+import type {
+  BundledLanguage,
+  BundledTheme,
+  DynamicImportLanguageRegistration,
+  DynamicImportThemeRegistration,
+  HighlighterCore,
+} from 'shiki';
+import {
+  defaultCodeTheme,
+  extractShikiData,
+  getThemeKey,
+  getThemeKeys,
+  isThemeString,
+  resolveCodeTheme,
+  resolveLanguage,
+  shikiTransformers,
+} from './shared';
+import type { ShikiCodeProps, ShikiRenderData } from './types';
 
 let highlighterCore: HighlighterCore | null = null;
-const codeHighlighterPromise = (async () => {
-  if (highlighterCore)
-    return highlighterCore;
-  const [{ createHighlighterCore }, getWasm] = await Promise.all([
-    import('shiki/core'),
-    import('shiki/wasm').then(m => m.default),
-  ]);
+let highlighterPromise: Promise<HighlighterCore> | null = null;
 
-  const core = await createHighlighterCore({
-    themes: [
-      import('shiki/themes/github-light.mjs'),
-      import('shiki/themes/github-dark.mjs'),
-    ],
-    langs: [],
-    loadWasm: getWasm,
-  });
+const getHighlighterCore = () => {
+  if (highlighterCore) {
+    return Promise.resolve(highlighterCore);
+  }
 
-  highlighterCore = core;
-  return core;
-})();
+  if (!highlighterPromise) {
+    highlighterPromise = (async () => {
+      const [{ createHighlighterCore }, getWasm] = await Promise.all([
+        import('shiki/core'),
+        import('shiki/wasm').then((m) => m.default),
+      ]);
 
-let langModule: Record<BundledLanguage, DynamicImportLanguageRegistration> | null = null;
-let themeModule: Record<BundledTheme, DynamicImportThemeRegistration> | null = null;
+      const core = await createHighlighterCore({
+        themes: [
+          import('shiki/themes/vitesse-light.mjs'),
+          import('shiki/themes/vitesse-black.mjs'),
+        ],
+        langs: [],
+        loadWasm: getWasm,
+      });
 
-export interface UseShikiResult {
-  /** HTML content (spans only, use with dangerouslySetInnerHTML) */
-  html: string | null;
-  /** Background style with CSS variables for light/dark themes */
-  bgStyle: string | null;
+      highlighterCore = core;
+      return core;
+    })();
+  }
+
+  return highlighterPromise;
+};
+
+let langModule: Record<
+  BundledLanguage,
+  DynamicImportLanguageRegistration
+> | null = null;
+let themeModule: Record<BundledTheme, DynamicImportThemeRegistration> | null =
+  null;
+
+export interface UseShikiResult extends ShikiRenderData {
   isLoading: boolean;
 }
 
@@ -52,95 +76,114 @@ export function useShiki({
   const [ready, setReady] = useState(false);
   const loadThemesRef = useRef([] as string[]);
   const loadLanguagesRef = useRef([] as string[]);
+  const resolvedTheme = useMemo(() => resolveCodeTheme(codeTheme), [codeTheme]);
 
   // Load highlighter
   useEffect(() => {
+    if (!code) return;
     let mounted = true;
-    codeHighlighterPromise.then((core) => {
-      if (mounted)
-        setShiki(core);
-    }).catch(() => {});
+    getHighlighterCore()
+      .then((core) => {
+        if (mounted) setShiki(core);
+      })
+      .catch(() => {});
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [code]);
 
   // Register language and themes
   useEffect(() => {
-    if (!shiki || !language || !codeTheme)
-      return;
+    if (!shiki || !language || !codeTheme || !code) return;
     let cancelled = false;
 
     async function register() {
-      async function loadShikiLanguage(lang: string, languageModule: any) {
-        if (!shiki)
-          return;
+      async function loadShikiLanguage(
+        lang: string,
+        languageModule: DynamicImportLanguageRegistration,
+      ) {
+        if (!shiki) return;
         if (!shiki.getLoadedLanguages().includes(lang)) {
           await shiki.loadLanguage(await languageModule());
         }
       }
-      async function loadShikiTheme(theme: string, themeModule: any) {
-        if (!shiki)
-          return;
+      async function loadShikiTheme(
+        theme: string,
+        themeModule: DynamicImportThemeRegistration,
+      ) {
+        if (!shiki) return;
         if (!shiki.getLoadedThemes().includes(theme)) {
           await shiki.loadTheme(await themeModule());
         }
       }
 
-      const [{ bundledLanguages }, { bundledThemes }]
-        = langModule && themeModule
+      const [{ bundledLanguages }, { bundledThemes }] =
+        langModule && themeModule
           ? [{ bundledLanguages: langModule }, { bundledThemes: themeModule }]
-          : await Promise.all([import('shiki/langs'), import('shiki/themes')]);
+          : await Promise.all([
+              import('shiki/langs') as Promise<{
+                bundledLanguages: Record<
+                  BundledLanguage,
+                  DynamicImportLanguageRegistration
+                >;
+              }>,
+              import('shiki/themes') as Promise<{
+                bundledThemes: Record<
+                  BundledTheme,
+                  DynamicImportThemeRegistration
+                >;
+              }>,
+            ]);
 
       langModule = bundledLanguages;
       themeModule = bundledThemes;
 
-      const themeName = getThemeName(codeTheme);
-
+      const themeKeys = getThemeKeys(resolvedTheme);
       if (
-        language
-        && loadLanguagesRef.current.includes(language)
-        && (!themeName || loadThemesRef.current.includes(themeName))
+        language &&
+        loadLanguagesRef.current.includes(language) &&
+        themeKeys.every((key) => loadThemesRef.current.includes(key))
       ) {
-        if (!cancelled)
-          setReady(true);
+        if (!cancelled) setReady(true);
         return;
       }
 
       await Promise.all([
         (async () => {
           if (language) {
-            const importFn = (bundledLanguages as any)[language];
-            if (!importFn)
-              return;
+            const importFn = bundledLanguages[language as BundledLanguage];
+            if (!importFn) return;
             await loadShikiLanguage(language, importFn);
             loadLanguagesRef.current.push(language);
           }
         })(),
         (async () => {
-          if (codeTheme) {
-            if (!shiki)
-              return;
-            if (isThemeString(codeTheme)) {
-              const importFn = (bundledThemes as any)[codeTheme];
-              if (importFn) {
-                await loadShikiTheme(codeTheme, importFn);
-                loadThemesRef.current.push(codeTheme);
+          const themes = [resolvedTheme.light, resolvedTheme.dark];
+          await Promise.all(
+            themes.map(async (theme) => {
+              const themeKey = getThemeKey(theme);
+              if (themeKey && loadThemesRef.current.includes(themeKey)) {
+                return;
               }
-              return;
-            }
 
-            await shiki.loadTheme(codeTheme as any);
-            const loadedThemeName = getThemeName(codeTheme);
-            if (loadedThemeName && !loadThemesRef.current.includes(loadedThemeName)) {
-              loadThemesRef.current.push(loadedThemeName);
-            }
-          }
+              if (isThemeString(theme)) {
+                const importFn = bundledThemes[theme as BundledTheme];
+                if (importFn) {
+                  await loadShikiTheme(theme, importFn);
+                }
+              } else {
+                await shiki.loadTheme(theme);
+              }
+
+              if (themeKey && !loadThemesRef.current.includes(themeKey)) {
+                loadThemesRef.current.push(themeKey);
+              }
+            }),
+          );
         })(),
       ]);
 
-      if (!cancelled)
-        setReady(true);
+      if (!cancelled) setReady(true);
     }
 
     setReady(false);
@@ -148,42 +191,28 @@ export function useShiki({
     return () => {
       cancelled = true;
     };
-  }, [shiki, codeTheme, language]);
+  }, [shiki, codeTheme, language, resolvedTheme, code]);
 
-  // Generate HTML and extract background style
-  const result = useMemo<{ html: string; bgStyle: string } | null>(() => {
-    if (!shiki || !ready || !code)
-      return null;
+  const result = useMemo<ShikiRenderData | null>(() => {
+    if (!shiki || !ready || !code) return null;
 
     try {
-      const fullHtml = shiki.codeToHtml(code, {
-        lang: language!,
-        theme: codeTheme as any,
+      const hastTree = shiki.codeToHast(code, {
+        lang: resolveLanguage(language, shiki.getLoadedLanguages()),
+        themes: resolvedTheme,
         transformers: shikiTransformers,
       });
 
-      return extractShikiHtml(fullHtml);
-    }
-    catch {
+      return extractShikiData(hastTree);
+    } catch {
       return null;
     }
-  }, [shiki, code, language, codeTheme, ready]);
+  }, [shiki, code, language, resolvedTheme, ready]);
 
   return {
     html: result?.html ?? null,
-    bgStyle: result?.bgStyle ?? null,
-    isLoading: !ready || !shiki,
+    preProps: result?.preProps ?? {},
+    codeProps: result?.codeProps ?? {},
+    isLoading: Boolean(code) && (!ready || !shiki),
   };
-}
-
-function isThemeString(theme: CodeTheme): theme is string {
-  return typeof theme === 'string';
-}
-
-function getThemeName(theme: CodeTheme): string | undefined {
-  if (typeof theme === 'string')
-    return theme;
-
-  const maybeName = (theme as any)?.name;
-  return typeof maybeName === 'string' ? maybeName : undefined;
 }

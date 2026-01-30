@@ -1,19 +1,23 @@
-import type { StringLiteralUnion, ThemeRegistrationAny } from '@shikijs/types';
+import type { HTMLAttributes } from 'react';
+import type { StringLiteralUnion, ThemeRegistrationAny } from 'shiki/types.mjs';
 
-export type CodeTheme = ThemeRegistrationAny | StringLiteralUnion<any>;
+export type CodeThemeValue = ThemeRegistrationAny | StringLiteralUnion<any>;
+
+export type CodeTheme =
+  | CodeThemeValue
+  | {
+      light: CodeThemeValue;
+      dark: CodeThemeValue;
+    };
 
 export interface ShikiCodeProps {
-  code: string;
-  language?: string;
   codeTheme?: CodeTheme;
+  language?: string;
+  code: string;
 }
 
-/**
- * Result from useShiki hook
- */
-export interface ShikiResult {
-  /** HTML content (spans inside code tag) */
-  innerHTML: string;
-  /** Background style with CSS variables for light/dark themes */
-  bgStyle: string;
+export interface ShikiRenderData {
+  html: string | null;
+  preProps: HTMLAttributes<HTMLPreElement>;
+  codeProps: HTMLAttributes<HTMLElement>;
 }
