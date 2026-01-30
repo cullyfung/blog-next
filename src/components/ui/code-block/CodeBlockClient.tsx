@@ -245,7 +245,7 @@ export function CodeBlockClient({
           {...restPreProps}
           ref={preRef}
           className={cn(
-            'shiki p-4 text-sm leading-relaxed m-0',
+            'shiki p-4 text-sm leading-relaxed m-0!',
             codeContent.length > 1 ? 'rounded-b-2xl' : 'rounded-2xl',
             hasOverflow ? 'overflow-x-auto' : 'overflow-x-hidden',
             hasOverflow && 'scrollbar-thin scrollbar-thumb-rounded',
